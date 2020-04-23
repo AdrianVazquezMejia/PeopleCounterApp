@@ -7,7 +7,9 @@ import json
 import paho.mqtt.client as mqtt
 from random import randint
 from inference import Network
-
+#python main.py -m /home/workspace/model/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.xml -i /home/workspace/images/people-counter-image.png
+# MQTT server environment variables
+#git config workpace
 INPUT_STREAM = "test_video.mp4"
 
 ADAS_MODEL = "/home/workspace/models/semantic-segmentation-adas-0001.xml"

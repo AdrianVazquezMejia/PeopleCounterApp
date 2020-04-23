@@ -33,7 +33,8 @@ import paho.mqtt.client as mqtt
 from argparse import ArgumentParser
 from inference import Network
 CPU_EXTENSION = "/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so"
-# MQTT server environment variables
+
+
 HOSTNAME = socket.gethostname()
 IPADDRESS = socket.gethostbyname(HOSTNAME)
 MQTT_HOST = IPADDRESS
@@ -48,9 +49,9 @@ def build_argparser():
     :return: command line arguments
     """
     parser = ArgumentParser()
-    parser.add_argument("-m", "--model", required=True, type=str,
+    parser.add_argument("-m", "--model", required=False, type=str,default = "/home/workspace/model/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.xml",
                         help="Path to an xml file with a trained model.")
-    parser.add_argument("-i", "--input", required=True, type=str,
+    parser.add_argument("-i", "--input", required=False, type=str, default = "/home/workspace/images/people-counter-image.png",
                         help="Path to image or video file")
     parser.add_argument("-l", "--cpu_extension", required=False, type=str,
                         default=None,
@@ -90,19 +91,20 @@ def infer_on_stream(args, client):
     prob_threshold = args.prob_threshold
 
     ### TODO: Load the model through `infer_network` ###
-    print("hello")
     print(args.model)
     infer_network.load_model(args.model,args.device,CPU_EXTENSION)
     ### TODO: Handle the input stream ###
     net_input_shape = infer_network.get_input_shape()
     ### TODO: Loop until stream is over ###
-    print(net_input_shape)
         ### TODO: Read from the video capture ###
 
         ### TODO: Pre-process the image as needed ###
-
+    frame = cv2.imread(args.input)
+    frame = cv2.resize(frame,(net_input_shape[3],net_input_shape[2]))
+    frame = frame.transpose((2,0,1))
+    frame = frame.reshape(1, *frame.shape)
         ### TODO: Start asynchronous inference for specified request ###
-
+    
         ### TODO: Wait for the result ###
 
             ### TODO: Get the results of the inference request ###
