@@ -91,7 +91,6 @@ def infer_on_stream(args, client):
     prob_threshold = args.prob_threshold
 
     ### TODO: Load the model through `infer_network` ###
-    print(args.model)
     infer_network.load_model(args.model,args.device,CPU_EXTENSION)
     ### TODO: Handle the input stream ###
     net_input_shape = infer_network.get_input_shape()
@@ -99,17 +98,23 @@ def infer_on_stream(args, client):
         ### TODO: Read from the video capture ###
 
         ### TODO: Pre-process the image as needed ###
-    frame = cv2.imread(args.input)
-    frame = cv2.resize(frame,(net_input_shape[3],net_input_shape[2]))
+    image = cv2.imread(args.input)
+    width = image.shape[0]
+    height = image.shape[1]
+    frame = cv2.resize(image,(net_input_shape[3],net_input_shape[2]))
     frame = frame.transpose((2,0,1))
     frame = frame.reshape(1, *frame.shape)
         ### TODO: Start asynchronous inference for specified request ###
-    
+    infer_network.exec_network(frame)
         ### TODO: Wait for the result ###
-
+    if infer_network.wait() == 0:
             ### TODO: Get the results of the inference request ###
-
+        result, out = infer_network.get_output()
             ### TODO: Extract any desired stats from the results ###
+        arr = result.flatten()
+        #print(arr)
+
+
 
             ### TODO: Calculate and send relevant information on ###
             ### current_count, total_count and duration to the MQTT server ###
@@ -119,8 +124,14 @@ def infer_on_stream(args, client):
         ### TODO: Send the frame to the FFMPEG server ###
 
         ### TODO: Write an output image if `single_image_mode` ###
-
-
+    xmin = int(arr[3]*height)
+    ymin = int(arr[4]*width)
+    xmax = int(arr[5]*height)
+    ymax = int(arr[6]*width)
+    cv2.rectangle(image,(xmin,ymin),(xmax,ymax),(0,0,255),1)
+    cv2.imwrite("out_image.png",image)
+    
+    
 def main():
     """
     Load the network and parse the output.

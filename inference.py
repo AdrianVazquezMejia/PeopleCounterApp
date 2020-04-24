@@ -36,10 +36,12 @@ class Network:
 
     def __init__(self):
         ### TODO: Initialize any class variables desired ###
-        self.exec_network = None
+        
+        self.exec_net = None
         self.plugin = None
         self.net = None
         self.input_blob = None
+        self.output_blob = None
         return
 
     def load_model(self, model, device = "CPU", cpu_extension = None):
@@ -51,7 +53,7 @@ class Network:
             self.plugin.add_extension(cpu_extension,device)
             
         self.net = IENetwork(model = model_xml, weights = model_bin)
-        self.plugin.load_network(self.net,device)
+        self.exec_net= self.plugin.load_network(self.net,device)
         ### TODO: Check for supported layers ###
         ### TODO: Add any necessary extensions ###
 
@@ -66,19 +68,23 @@ class Network:
         shape = self.net.inputs[self.input_blob].shape
         return shape
 
-    def exec_net(self):
+    def exec_network(self, image):
         ### TODO: Start an asynchronous request ###
+        self.exec_net.start_async(request_id = 0, inputs = {self.input_blob: image})
         ### TODO: Return any necessary information ###
         ### Note: You may need to update the function parameters. ###
         return
 
     def wait(self):
         ### TODO: Wait for the request to be complete. ###
+        status = self.exec_net.requests[0].wait(-1)
         ### TODO: Return any necessary information ###
         ### Note: You may need to update the function parameters. ###
-        return
+        return status
 
     def get_output(self):
         ### TODO: Extract and return the output results
+        self.output_blob = next(iter(self.net.outputs))
+        output = self.exec_net.requests[0].outputs[self.output_blob]
         ### Note: You may need to update the function parameters. ###
-        return
+        return output, self.output_blob
