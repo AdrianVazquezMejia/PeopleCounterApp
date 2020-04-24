@@ -26,6 +26,7 @@ import time
 import socket
 import json
 import cv2
+import numpy as np
 
 import logging as log
 import paho.mqtt.client as mqtt
@@ -112,7 +113,7 @@ def infer_on_stream(args, client):
         result, out = infer_network.get_output()
             ### TODO: Extract any desired stats from the results ###
         arr = result.flatten()
-        #print(arr)
+        matrix =np.reshape(arr, (-1,7))
 
 
 
@@ -124,11 +125,13 @@ def infer_on_stream(args, client):
         ### TODO: Send the frame to the FFMPEG server ###
 
         ### TODO: Write an output image if `single_image_mode` ###
-    xmin = int(arr[3]*height)
-    ymin = int(arr[4]*width)
-    xmax = int(arr[5]*height)
-    ymax = int(arr[6]*width)
-    cv2.rectangle(image,(xmin,ymin),(xmax,ymax),(0,0,255),1)
+    for i in range(len(matrix)):
+        if matrix[i][1]==1 and matrix[i][2]>0.5 :
+            xmin = int(matrix[i][3]*height)
+            ymin = int(matrix[i][4]*width)
+            xmax = int(matrix[i][5]*height)
+            ymax = int(matrix[i][6]*width)
+            cv2.rectangle(image,(xmin,ymin),(xmax,ymax),(0,0,255),1)
     cv2.imwrite("out_image.png",image)
     
     
