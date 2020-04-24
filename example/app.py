@@ -10,7 +10,7 @@ from inference import Network
 #python main.py -m /home/workspace/model/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.xml -i /home/workspace/images/people-counter-image.png
 # MQTT server environment variables
 #git config workpace
-
+#/home/workspace/resources/Pedestrian_Detect_2_1_1.mp4
 #git config --global user.email "aavm0000@gmail.com"
 INPUT_STREAM = "test_video.mp4"
 
