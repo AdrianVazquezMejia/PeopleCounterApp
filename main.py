@@ -88,19 +88,20 @@ def draw_boundingBox(result,frame, width,  height):
             cv2.rectangle(frame,(xmin,ymin),(xmax,ymax),(0,0,255),1)
     return frame
 
-def detect_person(result,incident_flag,quantity):
+def detect_person(result,incident_flag,quantity, timesnap):
     arr = result.flatten()
     matrix =np.reshape(arr, (-1,7))
     persons = 0
     for i in range(len(matrix)):
-        if matrix[i][1] ==1  and matrix[i][2]>0.3 :
+        if matrix[i][1] ==1  and matrix[i][2]>0.9 :
             persons+=1
     if persons != quantity and persons > 0 :
-        print("Aja se detectaron {} personas".format(persons))
+        timesnap = timesnap /10;
+        print("Aja se detectaron {} personas, t = {:.2f} s".format(persons, timesnap))
         incident_flag = True
         quantity = persons
+        incident_flag = True
     elif persons == 0 :
-        incident_flag = False
         quantity = 0
     return incident_flag, quantity
     
@@ -132,9 +133,12 @@ def infer_on_stream(args, client):
     out = cv2.VideoWriter('out.mp4', 0x00000021, 30, (width,height))
     incident_flag = False
     quantity = 0
+    total = 0
+    timesnap = 0
     ### TODO: Loop until stream is over ###
     while cap.isOpened():
         ### TODO: Read from the video capture ###
+        timesnap +=1
         flag, original_frame =cap.read()
         if not flag:
             break
@@ -154,7 +158,10 @@ def infer_on_stream(args, client):
             out_frame = draw_boundingBox(result,original_frame, height,width)
             out.write(out_frame)
             ### TODO: Calculate and send relevant information on ###
-            incident_flag, quantity = detect_person(result, incident_flag, quantity)
+            incident_flag, quantity = detect_person(result, incident_flag, quantity,timesnap)
+            if incident_flag == True :
+                total +=1
+                incident_flag= False
             ### current_count, total_count and duration to the MQTT server ###
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###
@@ -167,7 +174,7 @@ def infer_on_stream(args, client):
     out.release()
     cap.release()
     cv2.destroyAllWindows()
-
+    print("People counted {}".format(total))
     #cv2.imwrite("out_image.png",image)
     
     
