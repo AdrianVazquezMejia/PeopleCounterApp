@@ -87,6 +87,22 @@ def draw_boundingBox(result,frame, width,  height):
             ymax = int(matrix[i][6]*width)
             cv2.rectangle(frame,(xmin,ymin),(xmax,ymax),(0,0,255),1)
     return frame
+
+def detect_person(result,incident_flag,quantity):
+    arr = result.flatten()
+    matrix =np.reshape(arr, (-1,7))
+    persons = 0
+    for i in range(len(matrix)):
+        if matrix[i][1] ==1  and matrix[i][2]>0.3 :
+            persons+=1
+    if persons != quantity and persons > 0 :
+        print("Aja se detectaron {} personas".format(persons))
+        incident_flag = True
+        quantity = persons
+    elif persons == 0 :
+        incident_flag = False
+        quantity = 0
+    return incident_flag, quantity
     
 def infer_on_stream(args, client):
     """
@@ -114,6 +130,8 @@ def infer_on_stream(args, client):
     width = int(cap.get(3))
     height = int(cap.get(4))
     out = cv2.VideoWriter('out.mp4', 0x00000021, 30, (width,height))
+    incident_flag = False
+    quantity = 0
     ### TODO: Loop until stream is over ###
     while cap.isOpened():
         ### TODO: Read from the video capture ###
@@ -136,6 +154,7 @@ def infer_on_stream(args, client):
             out_frame = draw_boundingBox(result,original_frame, height,width)
             out.write(out_frame)
             ### TODO: Calculate and send relevant information on ###
+            incident_flag, quantity = detect_person(result, incident_flag, quantity)
             ### current_count, total_count and duration to the MQTT server ###
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###
