@@ -80,7 +80,7 @@ def draw_boundingBox(result,frame, width,  height):
     arr = result.flatten()
     matrix =np.reshape(arr, (-1,7))
     for i in range(len(matrix)):
-        if matrix[i][1]==1 and matrix[i][2]>0.3 :
+        if matrix[i][1]==1 and matrix[i][2]>0.1 :
             xmin = int(matrix[i][3]*height)
             ymin = int(matrix[i][4]*width)
             xmax = int(matrix[i][5]*height)
@@ -88,22 +88,42 @@ def draw_boundingBox(result,frame, width,  height):
             cv2.rectangle(frame,(xmin,ymin),(xmax,ymax),(0,0,255),1)
     return frame
 
-def detect_person(result,incident_flag,quantity, timesnap):
+def detect_person(result,incident_flag,quantity, timesnap, timer, ticks):
     arr = result.flatten()
     matrix =np.reshape(arr, (-1,7))
     persons = 0
     for i in range(len(matrix)):
-        if matrix[i][1] ==1  and matrix[i][2]>0.9 :
+        if matrix[i][1] ==1  and matrix[i][2]>0.1 :
             persons+=1
-    if persons != quantity and persons > 0 :
-        timesnap = timesnap /10;
-        print("Aja se detectaron {} personas, t = {:.2f} s".format(persons, timesnap))
-        incident_flag = True
+    if persons != quantity and persons > 0 and not incident_flag :
+        timer = True
+        ticks = 0
         quantity = persons
-        incident_flag = True
-    elif persons == 0 :
+    if persons == 0 and incident_flag :
+        timer = True
+        quantity =0
+    if persons != quantity and persons > 0 and incident_flag :
+        ticks = 0
+        timer= False
+        quantity = persons
+    if persons== 0 and not incident_flag:
+        ticks = 0
+        timer= False
         quantity = 0
-    return incident_flag, quantity
+    if timer :
+        ticks +=1
+    if ticks >15 :       
+        timer = False
+        ticks = 0
+        if persons >0:
+            incident_flag = True
+            timesnap = timesnap /10;
+            print("People detected t {:.2f} s confidence {:.2f}".format(timesnap,matrix[0][2]))
+        if persons == 0:
+            incident_flag = False
+            quantity = 0
+            
+    return incident_flag, quantity, timer, ticks
     
 def infer_on_stream(args, client):
     """
@@ -135,6 +155,9 @@ def infer_on_stream(args, client):
     quantity = 0
     total = 0
     timesnap = 0
+    timer = False
+    ticks = 0
+    doneCounter = False
     ### TODO: Loop until stream is over ###
     while cap.isOpened():
         ### TODO: Read from the video capture ###
@@ -158,10 +181,13 @@ def infer_on_stream(args, client):
             out_frame = draw_boundingBox(result,original_frame, height,width)
             out.write(out_frame)
             ### TODO: Calculate and send relevant information on ###
-            incident_flag, quantity = detect_person(result, incident_flag, quantity,timesnap)
-            if incident_flag == True :
+            incident_flag, quantity, timer, ticks = detect_person(result, incident_flag, quantity,timesnap, timer, ticks)
+            if incident_flag and not doneCounter :
                 total +=1
-                incident_flag= False
+                doneCounter = True
+            if not incident_flag:
+                doneCounter = False
+             #   incident_flag= False
             ### current_count, total_count and duration to the MQTT server ###
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###
