@@ -72,7 +72,8 @@ def build_argparser():
 
 def connect_mqtt():
     ### TODO: Connect to the MQTT client ###
-    client = None
+    client = mqtt.Client()
+    client.connect(MQTT_HOST,MQTT_PORT,MQTT_KEEPALIVE_INTERVAL)
 
     return client
 
@@ -185,14 +186,17 @@ def infer_on_stream(args, client):
             if incident_flag and not doneCounter :
                 total +=1
                 doneCounter = True
+                client.publish("person", total)
+                client.publish("person/duration",total)
             if not incident_flag:
                 doneCounter = False
              #   incident_flag= False
             ### current_count, total_count and duration to the MQTT server ###
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###
-        #sys.stdout.buffer.write(out_frame)
-        #sys.stdout.flush()
+
+        sys.stdout.buffer.write(out_frame)
+        sys.stdout.flush()
         ### TODO: Send the frame to the FFMPEG server ###
         if key_pressed == 27:
             break
@@ -202,7 +206,7 @@ def infer_on_stream(args, client):
     cv2.destroyAllWindows()
     print("People counted {}".format(total))
     #cv2.imwrite("out_image.png",image)
-    
+    client.disconnect()
     
 def main():
     """
