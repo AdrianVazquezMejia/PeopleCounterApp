@@ -87,4 +87,4 @@ class Network:
         self.output_blob = next(iter(self.net.outputs))
         output = self.exec_net.requests[0].outputs[self.output_blob]
         ### Note: You may need to update the function parameters. ###
-        return output, self.output_blob
+        return output

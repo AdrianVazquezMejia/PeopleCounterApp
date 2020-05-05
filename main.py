@@ -77,19 +77,20 @@ def connect_mqtt():
 
     return client
 
-def draw_boundingBox(result,frame, width,  height):
+def draw_boundingBox(result,frame, height,  width):
     arr = result.flatten()
     matrix =np.reshape(arr, (-1,7))
     for i in range(len(matrix)):
         if matrix[i][1]==1 and matrix[i][2]>0.1 :
-            xmin = int(matrix[i][3]*height)
-            ymin = int(matrix[i][4]*width)
-            xmax = int(matrix[i][5]*height)
-            ymax = int(matrix[i][6]*width)
+            xmin = int(matrix[i][3]*width)
+            ymin = int(matrix[i][4]*height)
+            xmax = int(matrix[i][5]*width)
+            ymax = int(matrix[i][6]*height)
             cv2.rectangle(frame,(xmin,ymin),(xmax,ymax),(0,0,255),1)
     return frame
 
-def detect_person(result,incident_flag,quantity, timesnap, timer, ticks):
+def detect_person(result, people):
+    global incident_flag, quantity, timesnap,timer, ticks
     arr = result.flatten()
     matrix =np.reshape(arr, (-1,7))
     persons = 0
@@ -119,12 +120,14 @@ def detect_person(result,incident_flag,quantity, timesnap, timer, ticks):
         if persons >0:
             incident_flag = True
             timesnap = timesnap /10;
+            people = persons
             print("People detected t {:.2f} s confidence {:.2f}".format(timesnap,matrix[0][2]))
         if persons == 0:
             incident_flag = False
             quantity = 0
+            people = 0
             
-    return incident_flag, quantity, timer, ticks
+    return people
     
 def infer_on_stream(args, client):
     """
@@ -138,7 +141,7 @@ def infer_on_stream(args, client):
     # Initialise the class
     infer_network = Network()
     # Set Probability threshold for detections
-    prob_threshold = args.prob_threshold
+    #prob_threshold = args.prob_threshold
 
     ### TODO: Load the model through `infer_network` ###
     infer_network.load_model(args.model,args.device,CPU_EXTENSION)
@@ -152,13 +155,16 @@ def infer_on_stream(args, client):
     width = int(cap.get(3))
     height = int(cap.get(4))
     out = cv2.VideoWriter('out.mp4', 0x00000021, 30, (width,height))
+    global incident_flag, quantity, timesnap, timer, ticks
     incident_flag = False
     quantity = 0
     total = 0
     timesnap = 0
     timer = False
     ticks = 0
+    curr_count = 0
     doneCounter = False
+    start_time =0
     ### TODO: Loop until stream is over ###
     while cap.isOpened():
         ### TODO: Read from the video capture ###
@@ -175,28 +181,38 @@ def infer_on_stream(args, client):
         ### TODO: Start asynchronous inference for specified request ###
         infer_network.exec_network(frame)
         ### TODO: Wait for the result ###
+        
         if infer_network.wait() == 0:
             ### TODO: Get the results of the inference request ###
-            result, outfix = infer_network.get_output()
+            result = infer_network.get_output()
             ### TODO: Extract any desired stats from the results ###
             out_frame = draw_boundingBox(result,original_frame, height,width)
             out.write(out_frame)
             ### TODO: Calculate and send relevant information on ###
-            incident_flag, quantity, timer, ticks = detect_person(result, incident_flag, quantity,timesnap, timer, ticks)
+            curr_count = detect_person(result, curr_count)
             if incident_flag and not doneCounter :
+                start_time = time.time()
                 total +=1
                 doneCounter = True
-                client.publish("person", total)
-                client.publish("person/duration",total)
-            if not incident_flag:
+                json.dumps({"total":total})
+                print("total is : {}".format(total))
+                client.publish("person",json.dumps({"total":total}))
+                #client.publish("person",json.dumps({"count":quantity}))
+                
+            if not incident_flag and doneCounter and total >= 1:
                 doneCounter = False
+                duration = int(time.time() - start_time)
+                print("ttimeis : {}".format(duration))
+                client.publish("person/duration",json.dumps({"person/duration":10}))
+            #print(curr_count)
+            client.publish("person",json.dumps({"count":curr_count}))   
              #   incident_flag= False
             ### current_count, total_count and duration to the MQTT server ###
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###
 
-        sys.stdout.buffer.write(out_frame)
-        sys.stdout.flush()
+       # sys.stdout.buffer.write(out_frame)
+        #sys.stdout.flush()
         ### TODO: Send the frame to the FFMPEG server ###
         if key_pressed == 27:
             break
@@ -214,6 +230,7 @@ def main():
 
     :return: None
     """
+    
     # Grab command line args
     args = build_argparser().parse_args()
     # Connect to the MQTT server
