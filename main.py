@@ -202,8 +202,9 @@ def infer_on_stream(args, client):
             if not incident_flag and doneCounter and total >= 1:
                 doneCounter = False
                 duration = int(time.time() - start_time)
-                print("ttimeis : {}".format(duration))
-                client.publish("person/duration",json.dumps({"person/duration":10}))
+                # Publish messages to the MQTT server
+                client.publish("person/duration",
+                               json.dumps({"duration": duration}))
             #print(curr_count)
             client.publish("person",json.dumps({"count":curr_count}))   
              #   incident_flag= False
