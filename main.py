@@ -121,7 +121,7 @@ def detect_person(result, people):
             incident_flag = True
             timesnap = timesnap /10;
             people = persons
-            print("People detected t {:.2f} s confidence {:.2f}".format(timesnap,matrix[0][2]))
+            #print("People detected t {:.2f} s confidence {:.2f}".format(timesnap,matrix[0][2]))
         if persons == 0:
             incident_flag = False
             quantity = 0
@@ -154,8 +154,8 @@ def infer_on_stream(args, client):
     #height = image.shape[1]
     width = int(cap.get(3))
     height = int(cap.get(4))
-    out = cv2.VideoWriter('out.mp4', 0x00000021, 30, (width,height))
-    print("width is: {} and height is {}".format(width, height))
+    out = cv2.VideoWriter('out.mp4', 0x00000021, 10, (width,height))
+    #print("width is: {} and height is {}".format(width, height))
     global incident_flag, quantity, timesnap, timer, ticks
     incident_flag = False
     quantity = 0
@@ -182,21 +182,26 @@ def infer_on_stream(args, client):
         ### TODO: Start asynchronous inference for specified request ###
         infer_network.exec_network(frame)
         ### TODO: Wait for the result ###
-        
+        inf_start = time.time()
         if infer_network.wait() == 0:
+            det_time = time.time() - inf_start
             ### TODO: Get the results of the inference request ###
             result = infer_network.get_output()
             ### TODO: Extract any desired stats from the results ###
             out_frame = draw_boundingBox(result,original_frame, height,width)
-            out.write(out_frame)
+            
+            inf_time_message = "Inference time: {:.3f}ms".format(det_time * 1000)
+            cv2.putText(out_frame, inf_time_message, (15, 15),
+                        cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
             ### TODO: Calculate and send relevant information on ###
+            out.write(out_frame)
             curr_count = detect_person(result, curr_count)
             if incident_flag and not doneCounter :
                 start_time = time.time()
                 total +=1
                 doneCounter = True
                 json.dumps({"total":total})
-                print("total is : {}".format(total))
+                #print("total is : {}".format(total))
                 client.publish("person",json.dumps({"total":total}))
                 #client.publish("person",json.dumps({"count":quantity}))
                 
@@ -213,8 +218,8 @@ def infer_on_stream(args, client):
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###
 
-       # sys.stdout.buffer.write(out_frame)
-        #sys.stdout.flush()
+        sys.stdout.buffer.write(out_frame)
+        sys.stdout.flush()
         ### TODO: Send the frame to the FFMPEG server ###
         if key_pressed == 27:
             break
@@ -222,7 +227,7 @@ def infer_on_stream(args, client):
     out.release()
     cap.release()
     cv2.destroyAllWindows()
-    print("People counted {}".format(total))
+    #print("People counted {}".format(total))
     #cv2.imwrite("out_image.png",image)
     client.disconnect()
     
