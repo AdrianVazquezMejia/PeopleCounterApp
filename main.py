@@ -155,6 +155,7 @@ def infer_on_stream(args, client):
     width = int(cap.get(3))
     height = int(cap.get(4))
     out = cv2.VideoWriter('out.mp4', 0x00000021, 30, (width,height))
+    print("width is: {} and height is {}".format(width, height))
     global incident_flag, quantity, timesnap, timer, ticks
     incident_flag = False
     quantity = 0
