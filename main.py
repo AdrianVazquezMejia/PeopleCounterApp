@@ -142,16 +142,28 @@ def infer_on_stream(args, client):
     infer_network = Network()
     # Set Probability threshold for detections
     #prob_threshold = args.prob_threshold
-
+    single_image = False
     ### TODO: Load the model through `infer_network` ###
     infer_network.load_model(args.model,args.device,CPU_EXTENSION)
     ### TODO: Handle the input stream ###
     net_input_shape = infer_network.get_input_shape()
-    cap = cv2.VideoCapture(args.input)
-    cap.open(args.input)
-    #image = cv2.imread(args.input)
-    #width = image.shape[0]
-    #height = image.shape[1]
+    
+    #Check for CAM, image or video
+    if args.input == 'CAM':
+        input_stream = 0
+    elif args.input.endswith('.jpg') or args.input.endswith('.bmp'):
+        single_image = True  
+        input_stream = args.input
+    else:
+        input_stream = args.input
+        assert os.path.isfile(args.input), "Specified input file doesn't exist"
+    
+    cap = cv2.VideoCapture(input_stream)
+    if input_stream :
+        cap.open(args.input)
+        
+    if not cap.isOpened():
+        log.error("Unable to open source")
     width = int(cap.get(3))
     height = int(cap.get(4))
     out = cv2.VideoWriter('out.mp4', 0x00000021, 10, (width,height))
@@ -224,11 +236,11 @@ def infer_on_stream(args, client):
         if key_pressed == 27:
             break
         ### TODO: Write an output image if `single_image_mode` ###
+        if single_image:
+            cv2.imwrite('out_image.jpg', out_frame)
     out.release()
     cap.release()
     cv2.destroyAllWindows()
-    #print("People counted {}".format(total))
-    #cv2.imwrite("out_image.png",image)
     client.disconnect()
     
 def main():
