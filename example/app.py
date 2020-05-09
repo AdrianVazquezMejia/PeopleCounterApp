@@ -7,6 +7,7 @@ import json
 import paho.mqtt.client as mqtt
 from random import randint
 from inference import Network
+CPU_EXTENSION = "/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so"
 #python main.py -m /home/workspace/model/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.xml -i /home/workspace/images/people-counter-image.png
 # MQTT server environment variables
 #git config workpace

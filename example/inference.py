@@ -20,7 +20,7 @@ class Network:
         self.output_blob = None
         self.exec_network = None
         self.infer_request = None
-
+        return
 
     def load_model(self, model, device="CPU", cpu_extension=None):
         '''
