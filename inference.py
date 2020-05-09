@@ -55,12 +55,18 @@ class Network:
         self.net = IENetwork(model = model_xml, weights = model_bin)
         self.exec_net= self.plugin.load_network(self.net,device)
         ### TODO: Check for supported layers ###
+        if device == "CPU":
+            supported_layers = self.plugin.query_network(self.net, device)
+            not_supported_layers = [l for l in self.net.layers.keys() if l not in supported_layers ]
+            if len(not_supported_layers) != 0:
+                log.error("It seems that there are layer that are not supported by the device {}:\n {}".format(self.plugin.device, ',  '.join(not_supported_layers)))
+                sys.exit(1)
         ### TODO: Add any necessary extensions ###
 
         ### TODO: Return the loaded inference plugin ###
         
         ### Note: You may need to update the function parameters. ###
-        return 
+        return self.plugin
 
     def get_input_shape(self):
         ### TODO: Return the shape of the input layer ###
