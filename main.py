@@ -80,12 +80,12 @@ def connect_mqtt():
 def draw_boundingBox(result,frame, height,  width):
     arr = result.flatten()
     matrix =np.reshape(arr, (-1,7))
-    for i in range(len(matrix)):
-        if matrix[i][1]==1 and matrix[i][2]>0.1 :
-            xmin = int(matrix[i][3]*width)
-            ymin = int(matrix[i][4]*height)
-            xmax = int(matrix[i][5]*width)
-            ymax = int(matrix[i][6]*height)
+    for item in matrix:
+        if item[1]==1 and item[2]>0.1 :
+            xmin = int(item[3]*width)
+            ymin = int(item[4]*height)
+            xmax = int(item[5]*width)
+            ymax = int(item[6]*height)
             cv2.rectangle(frame,(xmin,ymin),(xmax,ymax),(0,0,255),1)
     return frame
 
