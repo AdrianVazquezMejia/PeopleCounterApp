@@ -94,8 +94,8 @@ def detect_person(result, people):
     arr = result.flatten()
     matrix =np.reshape(arr, (-1,7))
     persons = 0
-    for i in range(len(matrix)):
-        if matrix[i][1] ==1  and matrix[i][2]>0.1 :
+    for item  in matrix:
+        if item[1] ==1  and item[2]>0.1 :
             persons+=1
     if persons != quantity and persons > 0 and not incident_flag :
         timer = True
