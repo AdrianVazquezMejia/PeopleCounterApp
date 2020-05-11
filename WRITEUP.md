@@ -6,9 +6,9 @@ questions.
 
 ## Explaining Custom Layers
 
-The process behind converting custom layers involves...
+Custom layer are layer that are not supported directly by the urret device which performs the convertion to IR. This layers must be handled in order to successfully get the IR of a model from an external framework, like Tensorflow. 
 
-Some of the potential reasons for handling custom layers are...
+Most of the processes to handle this, is to create the corresponding extention, so the custom layer could run on them accordingly.
 
 ## Comparing Model Performance
 
@@ -34,26 +34,12 @@ deployed edge model. The potential effects of each of these are as follows...
 
 ## Model Research
 
-[This heading is only required if a suitable model was not found after trying out at least three
-different models. However, you may also use this heading to detail how you converted 
-a successful model.]
+Model used  _ssd_mobilenet_v2_coco_2018_03_29_ 
+- I downloaded the model using  this command`wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz`
+- I extracted it `tar -xvf ssd_mobilenet_v2_coco_2018_03_29.tar.gz`
 
-In investigating potential people counter models, I tried each of the following three models:
+- I convert it to IR `python /opt/intel/openvino/deployment_tools/model_optimizer/mo.py --input_model ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb --tensorflow_object_detection_api_pipeline_config pipeline.config --reverse_input_channels --tensorflow_use_custom_operations_config /opt/intel/openvino/deployment_tools/model_optimizer/extensions/front/tf/ssd_v2_support.json`
 
-- Model 1: [Name]
-  - [Model Source]
-  - I converted the model to an Intermediate Representation with the following arguments...
-  - The model was insufficient for the app because...
-  - I tried to improve the model for the app by...
-  
-- Model 2: [Name]
-  - [Model Source]
-  - I converted the model to an Intermediate Representation with the following arguments...
-  - The model was insufficient for the app because...
-  - I tried to improve the model for the app by...
+This model did not seemed to accurate but I used through artifact in order to keep it useful. I mean, just detect a person if he/she remains more than one second in the video. 
 
-- Model 3: [Name]
-  - [Model Source]
-  - I converted the model to an Intermediate Representation with the following arguments...
-  - The model was insufficient for the app because...
-  - I tried to improve the model for the app by...
+- 

@@ -48,7 +48,7 @@ def load_to_IE(model_xml):
     plugin.load_network(net, "CPU")
 
     print("IR successfully loaded into Inference Engine.")
-    print(net.inputs['image_tensor'].shape)
+    print(net.outputs['InceptionResnetV2/AuxLogits/Logits/MatMul'].shape)
 
     return
 
