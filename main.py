@@ -64,7 +64,7 @@ def build_argparser():
                              "CPU, GPU, FPGA or MYRIAD is acceptable. Sample "
                              "will look for a suitable plugin for device "
                              "specified (CPU by default)")
-    parser.add_argument("-pt", "--prob_threshold", type=float, default=0.5,
+    parser.add_argument("-pt", "--prob_threshold", type=float, default=0.1,
                         help="Probability threshold for detections filtering"
                         "(0.5 by default)")
     return parser
@@ -81,7 +81,7 @@ def draw_boundingBox(result,frame, height,  width):
     arr = result.flatten()
     matrix =np.reshape(arr, (-1,7))
     for item in matrix:
-        if item[1]==1 and item[2]>0.1 :
+        if item[1]==1 and item[2]>pt :
             xmin = int(item[3]*width)
             ymin = int(item[4]*height)
             xmax = int(item[5]*width)
@@ -95,7 +95,7 @@ def detect_person(result, people):
     matrix =np.reshape(arr, (-1,7))
     persons = 0
     for item  in matrix:
-        if item[1] ==1  and item[2]>0.1 :
+        if item[1] ==1  and item[2]>pt :
             persons+=1
     if persons != quantity and persons > 0 and not incident_flag :
         timer = True
@@ -121,7 +121,6 @@ def detect_person(result, people):
             incident_flag = True
             timesnap = timesnap /10;
             people = persons
-            #print("People detected t {:.2f} s confidence {:.2f}".format(timesnap,matrix[0][2]))
         if persons == 0:
             incident_flag = False
             quantity = 0
@@ -169,8 +168,8 @@ def infer_on_stream(args, client):
     width = int(cap.get(3))
     height = int(cap.get(4))
     out = cv2.VideoWriter('out.mp4', 0x00000021, 10, (width,height))
-    #print("width is: {} and height is {}".format(width, height))
-    global incident_flag, quantity, timesnap, timer, ticks
+    global incident_flag, quantity, timesnap, timer, ticks, pt
+    pt = args.prob_threshold
     incident_flag = False
     quantity = 0
     total = 0
@@ -189,7 +188,6 @@ def infer_on_stream(args, client):
             break
         key_pressed = cv2.waitKey(60)
         ### TODO: Pre-process the image as needed ###
-
         frame = cv2.resize(original_frame,(net_input_shape[3],net_input_shape[2]))
         frame = frame.transpose((2,0,1))
         frame = frame.reshape(1, *frame.shape)
@@ -214,20 +212,15 @@ def infer_on_stream(args, client):
                 start_time = time.time()
                 total +=1
                 doneCounter = True
-                json.dumps({"total":total})
-                #print("total is : {}".format(total))
-                client.publish("person",json.dumps({"total":total}))
-                #client.publish("person",json.dumps({"count":quantity}))
-                
+                json.dumps({"total":total})                
+                client.publish("person",json.dumps({"total":total}))                
             if not incident_flag and doneCounter and total >= 1:
                 doneCounter = False
                 duration = int(time.time() - start_time)
                 # Publish messages to the MQTT server
                 client.publish("person/duration",
                                json.dumps({"duration": duration}))
-            #print(curr_count)
             client.publish("person",json.dumps({"count":curr_count}))   
-             #   incident_flag= False
             ### current_count, total_count and duration to the MQTT server ###
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###

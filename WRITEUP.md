@@ -1,8 +1,10 @@
 # Project Write-Up
 
-You can use this document as a template for providing your project write-up. However, if you
-have a different format you prefer, feel free to use it as long as you answer all required
-questions.
+This project can be run using the command
+
+`python <Project_dir>/main.py -i <Project_dir>/resources/Pedestrian_Detect_2_1_1.mp4  -m <Project_dir>/model/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.xml| ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3004/fac.ffm`
+
+Remember to activate MQTT server, web app and FFmpeg sever.
 
 ## Explaining Custom Layers
 
@@ -14,7 +16,11 @@ Most of the processes to handle this, is to create the corresponding extention, 
 
 I weighted the zip model before convertion and it was aprox. 190 MB, and after the .bin file was 68 MB, it reduced itself less than a half of its previous weight.
 
-The inference time of the model pre- and post-conversion was...
+The inference time of the model pre- and post-conversion varied not too much, before conversion I obteined about 70 and 120 ms per frame, and after 60ms average, however, it was reduced clearly after convetion. I used time.time() variation to calculate that time.
+
+The average accuracy was reduced after conversion about 15% and 20%, I used the confusion matrix method to measure that.
+
+The costs using the cloud are: Internet dependent, higher latency, and higher security risks.  The edge  gives more realiability, and faster response.
 
 ## Assess Model Use Cases
 
