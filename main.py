@@ -27,9 +27,10 @@ import socket
 import json
 import cv2
 import numpy as np
+import keyboard
 
 import logging as log
-import paho.mqtt.client as mqtt
+#import paho.mqtt.client as mqtt
 
 from argparse import ArgumentParser
 from inference import Network
@@ -50,7 +51,7 @@ def build_argparser():
     :return: command line arguments
     """
     parser = ArgumentParser()
-    parser.add_argument("-m", "--model", required=False, type=str,default = "/home/workspace/model/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.xml",
+    parser.add_argument("-m", "--model", required=False, type=str,default = "/home/adrian-estelio/Documents/vision/PeopleCounterApp/model/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.xml",
                         help="Path to an xml file with a trained model.")
     parser.add_argument("-i", "--input", required=False, type=str, default = "/home/workspace/images/people-counter-image.png",
                         help="Path to image or video file")
@@ -186,7 +187,8 @@ def infer_on_stream(args, client):
         flag, original_frame =cap.read()
         if not flag:
             break
-        key_pressed = cv2.waitKey(60)
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+            break
         ### TODO: Pre-process the image as needed ###
         frame = cv2.resize(original_frame,(net_input_shape[3],net_input_shape[2]))
         frame = frame.transpose((2,0,1))
@@ -207,36 +209,37 @@ def infer_on_stream(args, client):
                         cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
             ### TODO: Calculate and send relevant information on ###
             out.write(out_frame)
+            cv2.imshow('frame',out_frame)
             curr_count = detect_person(result, curr_count)
             if incident_flag and not doneCounter :
                 start_time = time.time()
                 total +=1
+                print("Total: {}".format(total))
                 doneCounter = True
                 json.dumps({"total":total})                
-                client.publish("person",json.dumps({"total":total}))                
+                #client.publish("person",json.dumps({"total":total}))                
             if not incident_flag and doneCounter and total >= 1:
                 doneCounter = False
                 duration = int(time.time() - start_time)
+        print("Count: {}".format(curr_count))		
                 # Publish messages to the MQTT server
-                client.publish("person/duration",
-                               json.dumps({"duration": duration}))
-            client.publish("person",json.dumps({"count":curr_count}))   
+                #client.publish("person/duration",
+                               #json.dumps({"duration": duration}))
+           # client.publish("person",json.dumps({"count":curr_count}))   
             ### current_count, total_count and duration to the MQTT server ###
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###
 
-        sys.stdout.buffer.write(out_frame)
-        sys.stdout.flush()
+        #sys.stdout.buffer.write(out_frame)
+        #sys.stdout.flush()
         ### TODO: Send the frame to the FFMPEG server ###
-        if key_pressed == 27:
-            break
         ### TODO: Write an output image if `single_image_mode` ###
         if single_image:
             cv2.imwrite('out_image.jpg', out_frame)
     out.release()
     cap.release()
     cv2.destroyAllWindows()
-    client.disconnect()
+    #client.disconnect()
     
 def main():
     """
@@ -244,11 +247,11 @@ def main():
 
     :return: None
     """
-    
+    client= None
     # Grab command line args
     args = build_argparser().parse_args()
     # Connect to the MQTT server
-    client = connect_mqtt()
+    #client = connect_mqtt()
     # Perform inference on the input stream
     infer_on_stream(args, client)
 

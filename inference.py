@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 #python main.py -i /home/workspace/resources/Pedestrian_Detect_2_1_1.mp4 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3004/fac.ffm
+#python3 main.py -i /home/adrian-estelio/Documents/vision/PeopleCounterApp/resources/Pedestrian_Detect_2_1_1.mp4
 """
  Copyright (c) 2018 Intel Corporation.
 
@@ -50,8 +51,8 @@ class Network:
         model_bin = os.path.splitext(model_xml)[0]+".bin"
         self.plugin = IECore()
         ### TODO: Load the model ###
-        if cpu_extension and "CPU" in device:
-            self.plugin.add_extension(cpu_extension,device)
+        #if cpu_extension and "CPU" in device:
+            #self.plugin.add_extension(cpu_extension,device)
             
         self.net = IENetwork(model = model_xml, weights = model_bin)
         self.exec_net= self.plugin.load_network(self.net,device)
